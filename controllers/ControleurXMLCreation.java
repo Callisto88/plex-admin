@@ -111,15 +111,6 @@ public class ControleurXMLCreation {
 		}
 	}
 
-	private static void writeToFile(String filename, Element doc){
-		try {
-			XMLOutputter fichierXml = new XMLOutputter();
-			fichierXml.output(doc,new FileOutputStream("projection.xml"));
-		}catch (Exception e){
-			e.printStackTrace();
-		}
-	}
-
 	private void globalDataControle(){
 		for (Projection p:globalData.getProjections()){
 			System.out.println("******************************************");
