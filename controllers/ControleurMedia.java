@@ -68,6 +68,10 @@ public class ControleurMedia {
         // Vars
         JsonArray jArrayProjection = new JsonArray();
         JsonObject output = new JsonObject();
+        JsonArray sortedjArrayProjection = new JsonArray();
+
+        // Utilisation d'un ArrayList pour pouvoir trier les JsonObject
+        ArrayList<JsonObject> jArray = new ArrayList<JsonObject>();
 
         Iterator<Projection> it = collectionProjections.iterator();
         while (it.hasNext()) {
@@ -96,9 +100,26 @@ public class ControleurMedia {
 
             // Array_push projection
             jArrayProjection.add(jObjectProjection);
+            jArray.add((JsonObject) jObjectProjection);
         }
 
-        output.add("projections", jArrayProjection);
+        Collections.sort(jArray, new Comparator<JsonObject>() {
+            @Override
+            public int compare(JsonObject j1, JsonObject j2) {
+
+                String v1 = j1.get("date").getAsString();
+                String v2 = j2.get("date").getAsString();
+
+                return v1.compareTo(v2);
+            }
+        });
+
+        // ArrayList _> JsonArray
+        for (int i = 0; i < jArray.size(); ++i) {
+            sortedjArrayProjection.add(jArray.get(i));
+        }
+
+        output.add("projections", sortedjArrayProjection);
 
         return output;
     }
@@ -119,9 +140,9 @@ public class ControleurMedia {
 
         // Formatage de la date telle qu'on les trouve en Suisse
         StringBuilder sbDate = new StringBuilder();
-        sbDate.append(pro.getDateHeure().get(Calendar.YEAR)).append(dateSeparator);
+        sbDate.append(pro.getDateHeure().get(Calendar.DAY_OF_MONTH)).append(dateSeparator);
         sbDate.append(pro.getDateHeure().get(Calendar.MONTH)).append(dateSeparator);
-        sbDate.append(pro.getDateHeure().get(Calendar.DAY_OF_MONTH));
+        sbDate.append(pro.getDateHeure().get(Calendar.YEAR));
         sDate = sbDate.toString();
 
         // Formatage de l'heure au format HH:MM
@@ -135,7 +156,7 @@ public class ControleurMedia {
         sHeure = sbHeure.toString();
 
         // Ajout de la date et de l'heure séparement
-        jObjectProjection.add("date", new JsonPrimitive(pro.getDateHeureString()));
+        jObjectProjection.add("date", new JsonPrimitive(sDate));
         jObjectProjection.add("heure", new JsonPrimitive(sHeure));
 
         return jObjectProjection;
@@ -155,6 +176,10 @@ public class ControleurMedia {
 
 	    // Collection d'acteurs
         JsonArray jArrayRoleActeur = new JsonArray();
+        JsonArray sortedjArrayRoleActeur = new JsonArray();
+
+        // Utilisation d'un ArrayList pour pouvoir trier les JsonObject
+        ArrayList<JsonObject> jArray = new ArrayList<JsonObject>();
 
 	    for (RoleActeur coupleRoleActeur : collectionRoleActeur) {
 	        long place = coupleRoleActeur.getPlace();
@@ -185,18 +210,11 @@ public class ControleurMedia {
 				// 		<role ... />	|| __>
 				// </acteur>			|| 	</acteurs>
 	            jArrayRoleActeur.add(jObjectActeur);
+                jArray.add((JsonObject) jObjectActeur);
             }
         }	// End for
 
         // On veut que les acteurs soient affichés dans l'ordre des places jouées (1ère place en 1er, 2ème en 2ème, etc..)
-        JsonArray sortedjArrayRoleActeur = new JsonArray();
-
-	    // Utilisationd d'un ArrayList pour pouvoir trier les JsonObject
-        ArrayList<JsonObject> jArray = new ArrayList<JsonObject>();
-	    for (int i = 0; i < jArrayRoleActeur.size(); ++i) {
-	        jArray.add((JsonObject) jArrayRoleActeur.get(i));
-        }
-
         Collections.sort(jArray, new Comparator<JsonObject>() {
             @Override
             public int compare(JsonObject j1, JsonObject j2) {
