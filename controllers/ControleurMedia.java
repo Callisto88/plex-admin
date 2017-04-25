@@ -1,18 +1,12 @@
 package controllers;
 
 import com.google.gson.*;
-import com.sun.tools.javah.Gen;
 import models.*;
 import views.*;
-
 import java.io.FileWriter;
-
 import java.io.Writer;
-import java.text.ParseException;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.Comparator;
 
 public class ControleurMedia {
 
@@ -21,9 +15,11 @@ public class ControleurMedia {
 	private ORMAccess ormAccess;
 	private GlobalData globalData;
 
+	// JSON output is for media purpose, so we limit to the 5 first items
 	private static final int LIMITE_GENRE = 5;
 	private static final int LIMITE_CRITIQUE = 5;
 	private static final int LIMITE_MOTSCLE = 5;
+	private static final String JSON_FILENAME = "projections.json";
 
 	public ControleurMedia(ControleurGeneral ctrGeneral, MainGUI mainGUI, ORMAccess ormAccess){
 		this.ctrGeneral=ctrGeneral;
@@ -54,7 +50,7 @@ public class ControleurMedia {
                     JsonObject output = buildJson(liste_projections);
 
                     // Write output to file
-                    try (Writer writer = new FileWriter("projections.json")) {
+                    try (Writer writer = new FileWriter(JSON_FILENAME)) {
                         writer.write(gson.toJson(output));
                     }
 
@@ -69,7 +65,7 @@ public class ControleurMedia {
 
 	private JsonObject buildJson(List<Projection> collectionProjections) {
 
-        // Variables
+        // Vars
         JsonArray jArrayProjection = new JsonArray();
         JsonObject output = new JsonObject();
 
@@ -82,12 +78,15 @@ public class ControleurMedia {
 
             Film filmSeance = projection.getFilm();
             JsonObject jObjectFilm = filmToJson(filmSeance);                        // 1 film par séance
+
+            // Setup array elements
             JsonArray jArrayActeursRole = roleActeurToJson(filmSeance.getRoles());  // Plusieurs acteurs / film
             JsonArray jArrayGenre = genresToJson(filmSeance.getGenres());           // Plusieurs genres / film
             JsonArray jArrayLangage = langagesToJson(filmSeance.getLangages());     // Plusieurs langages / film
             JsonArray jArrayMotsCle = motsClesToJson(filmSeance.getMotcles());      // Plusieurs mots-clés / film
             JsonArray jArrayCritiques = critiquesToJson(filmSeance.getCritiques()); // Plusieurs critiques / film
 
+            // Put all together
             jObjectProjection.add("film", jObjectFilm);
             jObjectFilm.add("acteurs", jArrayActeursRole);
             jObjectFilm.add("genres", jArrayGenre);
@@ -136,7 +135,7 @@ public class ControleurMedia {
         sHeure = sbHeure.toString();
 
         // Ajout de la date et de l'heure séparement
-        jObjectProjection.add("date", new JsonPrimitive(sDate));
+        jObjectProjection.add("date", new JsonPrimitive(pro.getDateHeureString()));
         jObjectProjection.add("heure", new JsonPrimitive(sHeure));
 
         return jObjectProjection;
@@ -144,11 +143,12 @@ public class ControleurMedia {
 
 	private JsonObject filmToJson(Film film) {
 
-	    JsonObject jObject = new JsonObject();
-	    jObject.add("titre", new JsonPrimitive(film.getTitre()));
-	    jObject.add("duree", new JsonPrimitive(film.getDureeToString()));
+	    JsonObject jObjectFilm = new JsonObject();
+        jObjectFilm.add("titre", new JsonPrimitive(film.getTitre()));
+        // jObjectFilm.add("photo", new JsonPrimitive(film.getPhoto()));
+        jObjectFilm.add("duree", new JsonPrimitive(film.getDureeToString()));
 
-	    return jObject;
+	    return jObjectFilm;
     }
 
     private JsonArray roleActeurToJson(Set<RoleActeur> collectionRoleActeur) {
@@ -157,7 +157,6 @@ public class ControleurMedia {
         JsonArray jArrayRoleActeur = new JsonArray();
 
 	    for (RoleActeur coupleRoleActeur : collectionRoleActeur) {
-
 	        long place = coupleRoleActeur.getPlace();
 
 	        // Seul les acteurs ayant le premier ou le second rôle
@@ -189,7 +188,33 @@ public class ControleurMedia {
             }
         }	// End for
 
-		return jArrayRoleActeur;
+        // On veut que les acteurs soient affichés dans l'ordre des places jouées (1ère place en 1er, 2ème en 2ème, etc..)
+        JsonArray sortedjArrayRoleActeur = new JsonArray();
+
+	    // Utilisationd d'un ArrayList pour pouvoir trier les JsonObject
+        ArrayList<JsonObject> jArray = new ArrayList<JsonObject>();
+	    for (int i = 0; i < jArrayRoleActeur.size(); ++i) {
+	        jArray.add((JsonObject) jArrayRoleActeur.get(i));
+        }
+
+        Collections.sort(jArray, new Comparator<JsonObject>() {
+            @Override
+            public int compare(JsonObject j1, JsonObject j2) {
+
+                // Comparaison basée sur l'attribut "place" pour un rôle donné
+                String v1 = ((JsonObject) j1.get("role")).get("place").getAsString();
+                String v2 = ((JsonObject) j2.get("role")).get("place").getAsString();
+
+                return v1.compareTo(v2);
+            }
+        });
+
+	    // ArrayList _> JsonArray
+        for (int i = 0; i < jArray.size(); ++i) {
+            sortedjArrayRoleActeur.add(jArray.get(i));
+        }
+
+		return sortedjArrayRoleActeur;
     }
 
     /**
@@ -206,7 +231,6 @@ public class ControleurMedia {
 		JsonArray jArrayGenres = new JsonArray();
 		Iterator<Genre> it = collectionGenre.iterator();
 
-		// LIMIT_GENRE could have been passed as function param
 		while (it.hasNext() && count <= LIMITE_GENRE ) {
             Genre genre = it.next();
 			JsonObject jObjectGenre = new JsonObject();
@@ -234,9 +258,7 @@ public class ControleurMedia {
         JsonArray jArrayMotsCle = new JsonArray();
         Iterator<Motcle> it = collectionMotCles.iterator();
 
-        // LIMIT_MOTSCLE could have been passed as function param
 	    while (it.hasNext() && count <= LIMITE_MOTSCLE) {
-
             Motcle motcle = it.next();
 	        JsonObject jObjectMotCle = new JsonObject();
 	        jObjectMotCle.add("label", new JsonPrimitive(motcle.getLabel()));
@@ -261,7 +283,6 @@ public class ControleurMedia {
 
 	    JsonArray jArrayLangages = new JsonArray();
 	    for (Langage langage : collectionLangages) {
-
 	        JsonObject jObjectLangage = new JsonObject();
 	        jObjectLangage.add("label", new JsonPrimitive(langage.getLabel()));
 
@@ -281,19 +302,65 @@ public class ControleurMedia {
      */
     private JsonArray critiquesToJson(Set<Critique> collectionCritiques) {
 
+        // Local vars
+        int count = 0;
         JsonArray jArrayCritiques = new JsonArray();
-        for (Critique critique : collectionCritiques) {
+        Iterator<Critique> it = collectionCritiques.iterator();
 
+        // LIMITE_CRITIQUE could have been passed as function param
+        while (it.hasNext() && count <= LIMITE_CRITIQUE ) {
+            Critique critique = it.next();
             JsonObject jObjectCritique = new JsonObject();
             jObjectCritique.add("note", new JsonPrimitive(critique.getNote()));
             jObjectCritique.add("texte", new JsonPrimitive(critique.getTexte()));
 
             // Push crtique to array
             jArrayCritiques.add(jObjectCritique);
+            count++;
         }
 
         return jArrayCritiques;
     }
+
+    /*private JsonArray sortJsonArray(JsonArray jsonArray) {
+
+        JsonArray sortedJsonArray = new JsonArray();
+        List<JsonElement> jsonValues = new ArrayList<>();
+
+        for (int i = 0; i < jsonArray.size(); ++i) {
+            jsonValues.add(jsonArray.get(i));
+        }
+
+        Collections.sort( jsonValues, new Comparator<JsonElement>() {
+
+            // Tri par place occupée dans le film
+            private static final String KEY_NAME = "place";
+
+            @Override
+            public int compare(JsonElement a, JsonElement b) {
+                String valA = new String();
+                String valB = new String();
+
+                try {
+                    valA = (String) a.get(KEY_NAME);
+                    valB = (String) b.get(KEY_NAME);
+                }
+                catch (JSONException e) {
+                    //do something
+                }
+
+                return valA.compareTo(valB);
+                //if you want to change the sort order, simply use the following:
+                //return -valA.compareTo(valB);
+            }
+        });
+
+        for (int i = 0; i < jsonArray.size(); i++) {
+            sortedJsonArray.put(jsonValues.get(i));
+        }
+
+        return sortedJsonArray;
+    }*/
 
 	/*
 
