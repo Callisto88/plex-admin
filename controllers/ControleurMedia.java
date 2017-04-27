@@ -5,8 +5,11 @@ import models.*;
 import views.*;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Comparator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ControleurMedia {
 
@@ -63,6 +66,13 @@ public class ControleurMedia {
 		}.start();
 	}
 
+    /**
+     * Génére le flux JSON correspondant à une collection de projection
+     * Appelle les méthodes spécialisées pour chaque type d'objet et complète le flux
+     *
+     * @param collectionProjections une List d'objet Projection
+     * @return un JsonObject avec le label "projections"
+     */
 	private JsonObject buildJson(List<Projection> collectionProjections) {
 
         // Vars
@@ -103,59 +113,79 @@ public class ControleurMedia {
             jArray.add((JsonObject) jObjectProjection);
         }
 
+        // Anonyme method to sort projection by date & heure
         Collections.sort(jArray, new Comparator<JsonObject>() {
             @Override
             public int compare(JsonObject j1, JsonObject j2) {
 
-                String v1 = j1.get("date").getAsString();
-                String v2 = j2.get("date").getAsString();
+                // Merge date & heure of j1
+                StringBuilder sbDateHeure1 = new StringBuilder();
+                sbDateHeure1.append(j1.get("date").getAsString() + " " + j1.get("heure").getAsString());
 
-                return v1.compareTo(v2);
+                // Merge date & heure of j2
+                StringBuilder sbDateHeure2 = new StringBuilder();
+                sbDateHeure2.append(j2.get("date").getAsString() + " " + j2.get("heure").getAsString());
+
+                StringBuilder sbDate1 = new StringBuilder();
+                StringBuilder sbDate2 = new StringBuilder();
+
+                // Match a date time like : DD-MM-YYYY HH:MM
+                String pattern = "(\\d{1,2})-(\\d{1,2})-(\\d{2,4}) (\\d\\d):(\\d\\d){0,1}";
+                Matcher matcher1 = Pattern.compile(pattern).matcher(sbDateHeure1.toString());
+                Matcher matcher2 = Pattern.compile(pattern).matcher(sbDateHeure2.toString());
+
+                // Build date as a unified string YYYYMMDDHHMM formated, so we can easily sort by date & heure
+                while(matcher1.find() && matcher2.find()){
+                    // j1
+                    sbDate1.append(matcher1.group(3)).append(matcher1.group(2)).append(matcher1.group(1));  // YYYYMMDD
+                    sbDate1.append(matcher1.group(4)).append(matcher1.group(5));    // HHMM
+                    // j2
+                    sbDate2.append(matcher2.group(3)).append(matcher2.group(2)).append(matcher2.group(1));  // YYYYMMDD
+                    sbDate2.append(matcher2.group(4)).append(matcher2.group(5));    // HHMM
+                }
+
+                // Compare YYYYMMDDHHMM
+                return sbDate1.toString().compareTo(sbDate2.toString());
             }
         });
 
-        // ArrayList _> JsonArray
+        // Back from ArrayList to JsonArray
         for (int i = 0; i < jArray.size(); ++i) {
             sortedjArrayProjection.add(jArray.get(i));
         }
-
         output.add("projections", sortedjArrayProjection);
 
         return output;
     }
 
+    /**
+     * Une projection est décrite dans le fichier JSON par la salle, la date et l'heure
+     * A noter que la date et l'heure son volontairement séparé pour offrir une plus grande flexibilité
+     * dans l'interprétation du fichier
+     *
+     * @param pro un objet Projection
+     * @return un JsonObject contenant les détails de la projection
+     */
 	private JsonObject projectionToJson(Projection pro) {
 
-        // Objets JSON
+        // Vars
         JsonObject jObjectProjection = new JsonObject();
-
-        // Date et heure
         String sDate = null;
         String sHeure = null;
-        Character dateSeparator = new Character('-');
-        Character hourSeparator = new Character(':');
 
         // Salle
         jObjectProjection.add("salle", new JsonPrimitive(String.valueOf(pro.getSalle())));
 
-        // Formatage de la date telle qu'on les trouve en Suisse
-        StringBuilder sbDate = new StringBuilder();
-        sbDate.append(pro.getDateHeure().get(Calendar.DAY_OF_MONTH)).append(dateSeparator);
-        sbDate.append(pro.getDateHeure().get(Calendar.MONTH)).append(dateSeparator);
-        sbDate.append(pro.getDateHeure().get(Calendar.YEAR));
-        sDate = sbDate.toString();
+        // Date
+        Calendar calDateHeure = pro.getDateHeure();
+        SimpleDateFormat date = new SimpleDateFormat("dd-M-yyy");
+        sDate = date.format(calDateHeure.getTime());
 
-        // Formatage de l'heure au format HH:MM
-        StringBuilder sbHeure = new StringBuilder();
-        sbHeure.append(pro.getDateHeure().get(Calendar.HOUR_OF_DAY)).append(":");
+        // Heure
+        SimpleDateFormat heure = new SimpleDateFormat("HH:mm");
+        sHeure = heure.format(calDateHeure.getTime());
 
-        // Fixe les cas où : minutes = 3 force le format à _> 03
-        int minutes = pro.getDateHeure().get(Calendar.MINUTE);
-        String minutesFormat = String.valueOf((minutes < 10) ? "0" + minutes : minutes);
-        sbHeure.append(minutesFormat);
-        sHeure = sbHeure.toString();
-
-        // Ajout de la date et de l'heure séparement
+        // Put in projection
         jObjectProjection.add("date", new JsonPrimitive(sDate));
         jObjectProjection.add("heure", new JsonPrimitive(sHeure));
 
@@ -249,7 +279,7 @@ public class ControleurMedia {
 		JsonArray jArrayGenres = new JsonArray();
 		Iterator<Genre> it = collectionGenre.iterator();
 
-		while (it.hasNext() && count <= LIMITE_GENRE ) {
+		while (it.hasNext() && count < LIMITE_GENRE ) {
             Genre genre = it.next();
 			JsonObject jObjectGenre = new JsonObject();
 			jObjectGenre.add("label", new JsonPrimitive(genre.getLabel()));
@@ -276,7 +306,7 @@ public class ControleurMedia {
         JsonArray jArrayMotsCle = new JsonArray();
         Iterator<Motcle> it = collectionMotCles.iterator();
 
-	    while (it.hasNext() && count <= LIMITE_MOTSCLE) {
+	    while (it.hasNext() && count < LIMITE_MOTSCLE) {
             Motcle motcle = it.next();
 	        JsonObject jObjectMotCle = new JsonObject();
 	        jObjectMotCle.add("label", new JsonPrimitive(motcle.getLabel()));
@@ -326,7 +356,7 @@ public class ControleurMedia {
         Iterator<Critique> it = collectionCritiques.iterator();
 
         // LIMITE_CRITIQUE could have been passed as function param
-        while (it.hasNext() && count <= LIMITE_CRITIQUE ) {
+        while (it.hasNext() && count < LIMITE_CRITIQUE ) {
             Critique critique = it.next();
             JsonObject jObjectCritique = new JsonObject();
             jObjectCritique.add("note", new JsonPrimitive(critique.getNote()));
