@@ -186,6 +186,8 @@ public class ControleurMedia {
         sHeure = heure.format(calDateHeure.getTime());
 
         // Put in projection
+        // jObjectProjection.add("formatDate", new JsonPrimitive("DD-MM-YYYY"));
+        // jObjectProjection.add("formatHeure", new JsonPrimitive());
         jObjectProjection.add("date", new JsonPrimitive(sDate));
         jObjectProjection.add("heure", new JsonPrimitive(sHeure));
 
@@ -369,70 +371,4 @@ public class ControleurMedia {
 
         return jArrayCritiques;
     }
-
-    /*private JsonArray sortJsonArray(JsonArray jsonArray) {
-
-        JsonArray sortedJsonArray = new JsonArray();
-        List<JsonElement> jsonValues = new ArrayList<>();
-
-        for (int i = 0; i < jsonArray.size(); ++i) {
-            jsonValues.add(jsonArray.get(i));
-        }
-
-        Collections.sort( jsonValues, new Comparator<JsonElement>() {
-
-            // Tri par place occupée dans le film
-            private static final String KEY_NAME = "place";
-
-            @Override
-            public int compare(JsonElement a, JsonElement b) {
-                String valA = new String();
-                String valB = new String();
-
-                try {
-                    valA = (String) a.get(KEY_NAME);
-                    valB = (String) b.get(KEY_NAME);
-                }
-                catch (JSONException e) {
-                    //do something
-                }
-
-                return valA.compareTo(valB);
-                //if you want to change the sort order, simply use the following:
-                //return -valA.compareTo(valB);
-            }
-        });
-
-        for (int i = 0; i < jsonArray.size(); i++) {
-            sortedJsonArray.put(jsonValues.get(i));
-        }
-
-        return sortedJsonArray;
-    }*/
-
-	/*
-
-	GsonBuilder builder = new GsonBuilder()
-                        .registerTypeAdapter(models.Projection.class, new ProjectionHandler())
-                        .registerTypeAdapter(models.Film.class, new FilmHandler())
-                        .registerTypeAdapter(models.Genre.class, new GenreHandler())
-                        .registerTypeAdapter(models.Acteur.class, new ActeurHandler());
-
-                    builder.setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
-                            .setPrettyPrinting();
-
-
-	private class ProjectionHandler implements JsonSerializer<Projection> {
-
-		public JsonElement serialize(Projection pro, Type typeOfSrc, JsonSerializationContext context) {
-			JsonObject jobj = new JsonObject();
-			jobj.addProperty("id", pro.getId());
-			jobj.addProperty("salle", String.valueOf(pro.getSalle()));
-			jobj.addProperty("dateHeure", pro.getDateHeureString());
-			jobj.addProperty("film", gson.toJson(pro.getFilm()));
-			jobj.addProperty("genres", gson.toJson(pro.getFilm().getGenres()));
-
-			return jobj;
-		}
-	} */
 }

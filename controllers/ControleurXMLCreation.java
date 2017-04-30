@@ -5,6 +5,7 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
+
 import views.*;
 
 import java.io.FileOutputStream;
@@ -15,6 +16,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+//import org.dom4j.*;
+//import org.dom4j.io.OutputFormat;
+//import org.dom4j.io.XMLWriter;
+
 import com.thoughtworks.xstream.XStream;
 
 public class ControleurXMLCreation {
@@ -24,7 +29,8 @@ public class ControleurXMLCreation {
 	private ORMAccess ormAccess;
 
 	private GlobalData globalData;
-	private static final String XML_FILENAME = "projections.xml";
+
+    private static final String XML_FILENAME = "projections.xml";
 
 	public ControleurXMLCreation(ControleurGeneral ctrGeneral, MainGUI mainGUI, ORMAccess ormAccess){
 		//this.ctrGeneral=ctrGeneral;
@@ -39,7 +45,7 @@ public class ControleurXMLCreation {
 				long currentTime = System.currentTimeMillis();
 				try {
 
-                    // Création du fichier XML
+						/*Création du fichier XML*/
 					Document doc = new Document();
 
 					//récupération de la liste des projection
@@ -47,23 +53,21 @@ public class ControleurXMLCreation {
 					List<Projection> liste_projections = globalData.getProjections();
 
 					//élément racine
-					Element element = new Element("Projections");
+					Element element = new Element("projections");
 
 					//Parcours de la liste des projections
 					for (Projection pro :liste_projections) {
-
 						element.addContent(
 								populatProjection(pro). //ajoute les projections
 										addContent(
 										populateFilm(pro)		//ajoute le film de la projection
 								));
-
 					}
 
-					doc.addContent(element);
-					writeToFile("projection", doc);
+					doc.setRootElement(element);
+					writeToFile(XML_FILENAME, doc);
 
-					mainGUI.setAcknoledgeMessage("XML cree en "+ ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+					mainGUI.setAcknoledgeMessage("XML cree en "+ displaySeconds(currentTime, System.currentTimeMillis()) );
 
 				}
 				catch (Exception e){
@@ -88,7 +92,8 @@ public class ControleurXMLCreation {
 
 				XStream xstream = new XStream();
 				writeToFile("global_data.xml", xstream, globalData);
-				mainGUI.setAcknoledgeMessage("XML cree en "+ ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+				System.out.println("Done [" + displaySeconds(currentTime, System.currentTimeMillis()) + "]");
+				mainGUI.setAcknoledgeMessage("XML cree en "+ displaySeconds(currentTime, System.currentTimeMillis()) );
 			}
 		}.start();
 	}
@@ -106,10 +111,17 @@ public class ControleurXMLCreation {
 	private static void writeToFile(String filename, Document doc){
 		try {
 			XMLOutputter fichierXml = new XMLOutputter(Format.getPrettyFormat());
-			fichierXml.output(doc,new FileOutputStream(XML_FILENAME));
+			fichierXml.output(doc,new FileOutputStream(filename));
 		}catch (Exception e){
 			e.printStackTrace();
 		}
+	}
+
+	private static final DecimalFormat doubleFormat = new DecimalFormat("#.#");
+	private static final String displaySeconds(long start, long end) {
+		long diff = Math.abs(end - start);
+		double seconds = ((double) diff) / 1000.0;
+		return doubleFormat.format(seconds) + " s";
 	}
 
 	private void globalDataControle(){
@@ -146,12 +158,14 @@ public class ControleurXMLCreation {
 
 		film.setAttribute("titre", pro.getFilm().getTitre());
 		film.setAttribute("duree", pro.getFilm().getDureeToString());
+		film.setAttribute("photo", pro.getFilm().getPhoto());
 
 		film.addContent(populateSynopsis(pro)); //le film a un synopsis
 		film.addContent(populateListGenre(pro)); //le film a une liste de genre
 		film.addContent(populateListMotsCles(pro)); //le film a une liste de mot cles
 		film.addContent(populateListLangue(pro)); //le film possède une liste de langues
-		film.addContent(populateListActeursRoles(pro));//.addContent(populateListRoles(pro))); //liste des acteurs du film
+		film.addContent(populateListActeursRoles(pro));//liste des acteurs du film
+		film.addContent(populateListCritiques(pro));//un film reçoit des critiques
 
 		return film;
 	}
@@ -163,7 +177,7 @@ public class ControleurXMLCreation {
 	}
 
 	private Element populatProjection(Projection pro){
-		Element elemProjections = new Element("Projection");
+		Element elemProjections = new Element("projection");
 
 		elemProjections.setAttribute("id", pro.getIdString());
 		elemProjections.setAttribute("salle", pro.getSalle().getIdString());
@@ -173,7 +187,7 @@ public class ControleurXMLCreation {
 	}
 
 	private Element populateListGenre(Projection pro){
-		Element genres = new Element("Genres");
+		Element genres = new Element("genres");
 		for (Genre genre : pro.getFilm().getGenres()) {
 			genres.addContent(populateGenre(genre));
 		}
@@ -181,7 +195,7 @@ public class ControleurXMLCreation {
 	}
 
 	private Element populateGenre(Genre gen){
-		Element genre = new Element("Genre");
+		Element genre = new Element("genre");
 		genre.setAttribute("id",gen.getIdToString());
 		genre.setAttribute("label", gen.getLabel());
 		return genre;
@@ -189,7 +203,7 @@ public class ControleurXMLCreation {
 
 
 	private Element populateListMotsCles(Projection pro){
-		Element motcles = new Element("MotCles");
+		Element motcles = new Element("motCles");
 		for (Motcle mot : pro.getFilm().getMotcles()) {
 			motcles.addContent(populateMotCle(mot));
 		}
@@ -197,7 +211,7 @@ public class ControleurXMLCreation {
 	}
 
 	private Element populateMotCle(Motcle mo){
-		Element mot = new Element("MotCle");
+		Element mot = new Element("motCle");
 		mot.setAttribute("id",mo.getIdToString());
 		mot.setAttribute("label", mo.getLabel());
 		return mot;
@@ -237,9 +251,9 @@ public class ControleurXMLCreation {
 		Element elemActeur = new Element("acteur");
 		elemActeur.setAttribute("nom", acteur.getNom());
 		elemActeur.setAttribute("sexe", acteur.getSexe().toString());
-		elemActeur.setAttribute("nom_naissance", acteur.getNomNaissance());
-		elemActeur.setAttribute("date_Naissance", acteur.getDateNaissanceToString());
-		elemActeur.setAttribute("date_Deces", acteur.getDateDecesToString());
+		elemActeur.setAttribute("nomNaissance", acteur.getNomNaissance());
+		elemActeur.setAttribute("dateNaissance", acteur.getDateNaissanceToString());
+		elemActeur.setAttribute("dateDeces", acteur.getDateDecesToString());
 
 		elemActeur.addContent(populateRole(roleActeur));
 
@@ -253,6 +267,25 @@ public class ControleurXMLCreation {
 		elementRole.setAttribute("place",role.getPlaceToString());
 
 		return elementRole;
+	}
+
+	private Element populateListCritiques(Projection pro) {
+		Element critiques = new Element("critiques");
+
+		for(Critique critique : pro.getFilm().getCritiques()){
+			critiques.addContent(populateCritique(critique));
+		}
+
+		return critiques;
+	}
+
+	private Element populateCritique(Critique critique){
+		Element elemCritique = new Element("critique");
+		elemCritique.setAttribute("id", critique.getIdToString());
+		elemCritique.setAttribute("note",critique.getNoteToString());
+		elemCritique.setAttribute("texte",critique.getTexte());
+
+		return elemCritique;
 	}
 }
 
