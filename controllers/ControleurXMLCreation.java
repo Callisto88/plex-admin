@@ -39,7 +39,7 @@ public class ControleurXMLCreation {
 				long currentTime = System.currentTimeMillis();
 				try {
 
-						/*Création du fichier XML*/
+                    // Création du fichier XML
 					Document doc = new Document();
 
 					//récupération de la liste des projection
