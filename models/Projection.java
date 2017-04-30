@@ -29,7 +29,7 @@ public class Projection  implements Serializable {
 		this.dateHeure=dateHeure;	
 	}
 	public String getDateHeureString(){
-		SimpleDateFormat date = new SimpleDateFormat("dd-M-yyy - HH:mm");
+		SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy - HH:mm");
 		return date.format(dateHeure.getTime());
 	}
 

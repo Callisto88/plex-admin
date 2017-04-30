@@ -54,6 +54,8 @@ public class ControleurXMLCreation {
 
 					//élément racine
 					Element element = new Element("projections");
+					//indication du format date Heure pour les projections
+					element.setAttribute("formatDateHeure", "dd-MM-yyyy - HH:mm /24h");
 
 					//Parcours de la liste des projections
 					for (Projection pro :liste_projections) {
@@ -238,6 +240,7 @@ public class ControleurXMLCreation {
 		Set<RoleActeur> ra = pro.getFilm().getRoles(); //Les roles du film
 		Iterator<RoleActeur> it = ra.iterator();
 
+		acteurs.setAttribute("formatDate", "dd-MM-yyyy"); //format de la date
 		while(it.hasNext()){
 			acteurs.addContent(populateActeur(it.next()));
 		}
