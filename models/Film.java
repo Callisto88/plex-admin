@@ -48,7 +48,12 @@ public class Film implements Serializable{
 
 	@Column(name="photo", nullable = true, length = 255)
 	private String photo;
-	public String getPhoto(){return photo;}
+	public String getPhoto(){
+		if(photo == null){
+			photo = "";
+		}
+		return photo;
+	}
 	public void setPhoto(String photo){
 		this.photo=photo;	
 	}

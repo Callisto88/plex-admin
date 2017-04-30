@@ -196,7 +196,7 @@ public class ControleurMedia {
 
 	    JsonObject jObjectFilm = new JsonObject();
         jObjectFilm.add("titre", new JsonPrimitive(film.getTitre()));
-        // jObjectFilm.add("photo", new JsonPrimitive(film.getPhoto()));
+        jObjectFilm.add("photo", new JsonPrimitive(film.getPhoto()));
         jObjectFilm.add("duree", new JsonPrimitive(film.getDureeToString()));
 
 	    return jObjectFilm;

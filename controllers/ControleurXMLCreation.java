@@ -1,4 +1,4 @@
- package controllers;
+package controllers;
 
 import models.*;
 import org.jdom2.Document;
@@ -24,6 +24,7 @@ public class ControleurXMLCreation {
 	private ORMAccess ormAccess;
 
 	private GlobalData globalData;
+	private static final String XML_FILENAME = "projections.xml";
 
 	public ControleurXMLCreation(ControleurGeneral ctrGeneral, MainGUI mainGUI, ORMAccess ormAccess){
 		//this.ctrGeneral=ctrGeneral;
@@ -33,62 +34,62 @@ public class ControleurXMLCreation {
 
 	public void createXML(){
 		new Thread(){
-				public void run(){
-					mainGUI.setAcknoledgeMessage("Creation XML... WAIT");
-					long currentTime = System.currentTimeMillis();
-					try {
+			public void run(){
+				mainGUI.setAcknoledgeMessage("Creation XML... WAIT");
+				long currentTime = System.currentTimeMillis();
+				try {
 
 						/*Création du fichier XML*/
-						Document doc = new Document();
+					Document doc = new Document();
 
-						//récupération de la liste des projection
-						globalData = ormAccess.GET_GLOBAL_DATA();
-						List<Projection> liste_projections = globalData.getProjections();
+					//récupération de la liste des projection
+					globalData = ormAccess.GET_GLOBAL_DATA();
+					List<Projection> liste_projections = globalData.getProjections();
 
-						//élément racine
-						Element element = new Element("Projections");
+					//élément racine
+					Element element = new Element("Projections");
 
-						//Parcours de la liste des projections
-						for (Projection pro :liste_projections) {
+					//Parcours de la liste des projections
+					for (Projection pro :liste_projections) {
 
-							element.addContent(
-										populatProjection(pro). //ajoute les projections
-									addContent(
+						element.addContent(
+								populatProjection(pro). //ajoute les projections
+										addContent(
 										populateFilm(pro)		//ajoute le film de la projection
-									));
-
-						}
-
-						doc.addContent(element);
-						writeToFile("projection", doc);
-
-						mainGUI.setAcknoledgeMessage("XML cree en "+ ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+								));
 
 					}
-					catch (Exception e){
-						mainGUI.setErrorMessage("Construction XML impossible", e.toString());
-					}
+
+					doc.addContent(element);
+					writeToFile("projection", doc);
+
+					mainGUI.setAcknoledgeMessage("XML cree en "+ ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+
 				}
+				catch (Exception e){
+					mainGUI.setErrorMessage("Construction XML impossible", e.toString());
+				}
+			}
 		}.start();
 	}
 
 	public void createXStreamXML(){
 		new Thread(){
-				public void run(){
-					mainGUI.setAcknoledgeMessage("Creation XML... WAIT");
-					long currentTime = System.currentTimeMillis();
-					try {
-						globalData = ormAccess.GET_GLOBAL_DATA();
-						globalDataControle();
-					}
-					catch (Exception e){
-						mainGUI.setErrorMessage("Construction XML impossible", e.toString());
-					}
-
-					XStream xstream = new XStream();
-					writeToFile("global_data.xml", xstream, globalData);
-					mainGUI.setAcknoledgeMessage("XML cree en "+ ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+			public void run(){
+				mainGUI.setAcknoledgeMessage("Creation XML... WAIT");
+				long currentTime = System.currentTimeMillis();
+				try {
+					globalData = ormAccess.GET_GLOBAL_DATA();
+					globalDataControle();
 				}
+				catch (Exception e){
+					mainGUI.setErrorMessage("Construction XML impossible", e.toString());
+				}
+
+				XStream xstream = new XStream();
+				writeToFile("global_data.xml", xstream, globalData);
+				mainGUI.setAcknoledgeMessage("XML cree en "+ ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+			}
 		}.start();
 	}
 
@@ -105,7 +106,7 @@ public class ControleurXMLCreation {
 	private static void writeToFile(String filename, Document doc){
 		try {
 			XMLOutputter fichierXml = new XMLOutputter(Format.getPrettyFormat());
-			fichierXml.output(doc,new FileOutputStream("projection.xml"));
+			fichierXml.output(doc,new FileOutputStream(XML_FILENAME));
 		}catch (Exception e){
 			e.printStackTrace();
 		}
