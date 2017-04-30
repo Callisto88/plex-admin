@@ -3,6 +3,8 @@ package controllers;
 import com.google.gson.*;
 import models.*;
 import views.*;
+
+import javax.lang.model.type.PrimitiveType;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
@@ -153,6 +155,11 @@ public class ControleurMedia {
         for (int i = 0; i < jArray.size(); ++i) {
             sortedjArrayProjection.add(jArray.get(i));
         }
+
+        // Ajout du format de la date au tout début
+        JsonObject jFormatDate = new JsonObject();
+        output.addProperty("formatDate", "DD-MM-YYYY");
+        output.addProperty("formatHeure", "HH:MM /24h");
         output.add("projections", sortedjArrayProjection);
 
         return output;
@@ -178,7 +185,7 @@ public class ControleurMedia {
 
         // Date
         Calendar calDateHeure = pro.getDateHeure();
-        SimpleDateFormat date = new SimpleDateFormat("dd-M-yyy");
+        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy");
         sDate = date.format(calDateHeure.getTime());
 
         // Heure
@@ -186,8 +193,6 @@ public class ControleurMedia {
         sHeure = heure.format(calDateHeure.getTime());
 
         // Put in projection
-        // jObjectProjection.add("formatDate", new JsonPrimitive("DD-MM-YYYY"));
-        // jObjectProjection.add("formatHeure", new JsonPrimitive());
         jObjectProjection.add("date", new JsonPrimitive(sDate));
         jObjectProjection.add("heure", new JsonPrimitive(sHeure));
 
@@ -209,6 +214,7 @@ public class ControleurMedia {
 	    // Collection d'acteurs
         JsonArray jArrayRoleActeur = new JsonArray();
         JsonArray sortedjArrayRoleActeur = new JsonArray();
+        jArrayRoleActeur.add(new JsonPrimitive("formatDate"));
 
         // Utilisation d'un ArrayList pour pouvoir trier les JsonObject
         ArrayList<JsonObject> jArray = new ArrayList<JsonObject>();
@@ -227,7 +233,7 @@ public class ControleurMedia {
 
 	        	// Détails de l'acteur
 	        	jObjectActeur.add("nom", new JsonPrimitive(coupleRoleActeur.getActeur().getNom()));
-	            jObjectActeur.add("date_naissance", new JsonPrimitive(coupleRoleActeur.getActeur().getDateNaissanceToString()));
+	            jObjectActeur.add("dateNaissance", new JsonPrimitive(coupleRoleActeur.getActeur().getDateNaissanceToString()));
 
 	            // Rôle joué
 	            jsonObjectRole.add("personnage", new JsonPrimitive(coupleRoleActeur.getPersonnage()));
@@ -315,7 +321,6 @@ public class ControleurMedia {
 
             // Push motclé to array
 	        jArrayMotsCle.add(jObjectMotCle);
-
 	        count++;
         }
 
