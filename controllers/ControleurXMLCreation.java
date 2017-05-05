@@ -1,8 +1,10 @@
 package controllers;
 
 import models.*;
+import org.jdom2.DocType;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.jdom2.ProcessingInstruction;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
@@ -12,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -52,10 +55,21 @@ public class ControleurXMLCreation {
 					globalData = ormAccess.GET_GLOBAL_DATA();
 					List<Projection> liste_projections = globalData.getProjections();
 
+					//ajout de la ligne pour la dtd
+					doc.addContent(new DocType("projections", "plex_admin.dtd"));
+                    //ajout de la feuille de style
+                    ProcessingInstruction pI = new ProcessingInstruction("xml-stylesheet");
+                    HashMap<String,String> hm = new HashMap<String, String>();
+                    hm.put("type","text/xsl");
+                    hm.put("href","projections.xsl");
+                    pI.setData(hm);
+                    doc.addContent(pI);
+
 					//élément racine
 					Element element = new Element("projections");
 					//indication du format date Heure pour les projections
 					element.setAttribute("formatDateHeure", "dd-MM-yyyy - HH:mm /24h");
+
 
 					//Parcours de la liste des projections
 					for (Projection pro :liste_projections) {
@@ -241,7 +255,8 @@ public class ControleurXMLCreation {
 		Iterator<RoleActeur> it = ra.iterator();
 
 		acteurs.setAttribute("formatDate", "dd-MM-yyyy"); //format de la date
-		while(it.hasNext()){
+
+			while(it.hasNext()){
 			acteurs.addContent(populateActeur(it.next()));
 		}
 
