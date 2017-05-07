@@ -19,6 +19,7 @@ public class MainGUI {
 	private JButton createXStreamXML	= null;
 	private JButton createXML 			= null;
 	private JButton sendJSON 			= null;
+	private JButton xmlFromXpath		= null;
 
 	public MainGUI(ControleurGeneral _controleurGeneral) {
 		controleurGeneral = _controleurGeneral;
@@ -91,6 +92,17 @@ public class MainGUI {
 		});
 		tools.add(sendJSON);
 
+		xmlFromXpath = new JButton("Xml from Xpath");
+		xmlFromXpath.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				controleurGeneral.createXmlFromXpath();
+			}
+		});
+		tools.add(xmlFromXpath);
+
+
+
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				//Turn off metal's use of bold fonts
@@ -126,14 +138,16 @@ public class MainGUI {
 		initBD.setEnabled(false);
 		createXStreamXML.setEnabled(false);
 		createXML.setEnabled(false);
-		sendJSON.setEnabled(false);  
+		sendJSON.setEnabled(false);
+		xmlFromXpath.setEnabled(false);
 	}
 
 	public void enableButtons() {
 		initBD.setEnabled(true);
 		createXStreamXML.setEnabled(true);
 		createXML.setEnabled(true);
-		sendJSON.setEnabled(true);  
+		sendJSON.setEnabled(true);
+		xmlFromXpath.setEnabled(true);
 	}
 
 	public void setErrorMessage(String text, String exception_text) {

@@ -30,6 +30,7 @@ public class ControleurXMLCreation {
 	//private ControleurGeneral ctrGeneral;
 	private static MainGUI mainGUI;
 	private ORMAccess ormAccess;
+	private Document xmlDoc;
 
 	private GlobalData globalData;
 
@@ -55,16 +56,6 @@ public class ControleurXMLCreation {
 					globalData = ormAccess.GET_GLOBAL_DATA();
 					List<Projection> liste_projections = globalData.getProjections();
 
-					//ajout de la ligne pour la dtd
-					doc.addContent(new DocType("projections", "plex_admin.dtd"));
-                    //ajout de la feuille de style
-                    ProcessingInstruction pI = new ProcessingInstruction("xml-stylesheet");
-                    HashMap<String,String> hm = new HashMap<String, String>();
-                    hm.put("type","text/xsl");
-                    hm.put("href","projections.xsl");
-                    pI.setData(hm);
-                    doc.addContent(pI);
-
 					//élément racine
 					Element element = new Element("projections");
 					//indication du format date Heure pour les projections
@@ -82,7 +73,7 @@ public class ControleurXMLCreation {
 
 					doc.setRootElement(element);
 					writeToFile(XML_FILENAME, doc);
-
+					xmlDoc = doc; //enregistrement du nouveau fichier
 					mainGUI.setAcknoledgeMessage("XML cree en "+ displaySeconds(currentTime, System.currentTimeMillis()) );
 
 				}
@@ -167,6 +158,10 @@ public class ControleurXMLCreation {
 				System.out.println(critique.getTexte());
 			}
 		}
+	}
+
+	public Document getXmlDocument(){
+		return xmlDoc;
 	}
 
 	private Element populateFilm(Projection pro){

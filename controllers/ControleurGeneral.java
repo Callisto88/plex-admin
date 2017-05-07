@@ -20,6 +20,7 @@ public class ControleurGeneral {
 	//private ControleurWFC ctrWFC;
 	private ControleurMedia ctrMedia; 
 	private ControleurXMLCreation ctrXMLCreation;
+	private ControleurXpathXML ctrXmltoXpath;
 
 	public ControleurGeneral(ORMAccess ormAccess){
 		ControleurGeneral.ormAccess = ormAccess;
@@ -31,6 +32,7 @@ public class ControleurGeneral {
 
 		ctrMedia = new ControleurMedia(this, mainGUI, ormAccess);
 		ctrXMLCreation = new ControleurXMLCreation(this, mainGUI, ormAccess);
+		ctrXmltoXpath = new ControleurXpathXML(ctrXMLCreation.getXmlDocument(), mainGUI);
 	}
 
 	public void createXStreamXML(){ctrXMLCreation.createXStreamXML();}
@@ -38,6 +40,8 @@ public class ControleurGeneral {
 	public void createXML(){ctrXMLCreation.createXML();}
 
 	public void sendJSONToMedia(){ctrMedia.sendJSONToMedia();}
+
+	public void createXmlFromXpath() {ctrXmltoXpath.createXmlWithXpath();}
 
 	public void initBaseDeDonnees() {
 		new Thread(){
