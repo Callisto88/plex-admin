@@ -167,6 +167,7 @@ public class ControleurXMLCreation {
 	private Element populateFilm(Projection pro){
 		Element film =  new Element("film");
 
+		film.setAttribute("film_id", pro.getFilm().getId() + "");
 		film.setAttribute("titre", pro.getFilm().getTitre());
 		film.setAttribute("duree", pro.getFilm().getDureeToString());
 		film.setAttribute("photo", pro.getFilm().getPhoto());
@@ -191,7 +192,8 @@ public class ControleurXMLCreation {
 		Element elemProjections = new Element("projection");
 
 		elemProjections.setAttribute("id", pro.getIdString());
-		elemProjections.setAttribute("salle", pro.getSalle().getIdString());
+		elemProjections.setAttribute("salle", pro.getSalle().getNo());
+		elemProjections.setAttribute("taille", pro.getSalle().getTaille()+"");
 		elemProjections.setAttribute("dateHeure", pro.getDateHeureString());
 
 		return elemProjections;
