@@ -264,6 +264,7 @@ public class ControleurXMLCreation {
 		Acteur acteur = roleActeur.getActeur();
 
 		Element elemActeur = new Element("acteur");
+		elemActeur.setAttribute("acteur_id", acteur.getId() + "");
 		elemActeur.setAttribute("nom", acteur.getNom());
 		elemActeur.setAttribute("sexe", acteur.getSexe().toString());
 		elemActeur.setAttribute("nomNaissance", acteur.getNomNaissance());
