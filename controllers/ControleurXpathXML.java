@@ -1,13 +1,14 @@
-package controllers;
+/**
+ *
+ * @author Thomas Léchaire
+ * @author Cyril Balboni
+ * @version 1.0
+ */
 
+package controllers;
 
 import models.GlobalData;
 import org.jdom2.*;
-import org.jdom2.input.SAXBuilder;
-
-import com.thoughtworks.xstream.XStream;
-import models.GlobalData;
-import org.jaxen.dom.DocumentNavigator;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.DocType;
 import org.jdom2.Document;
@@ -21,20 +22,15 @@ import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 import views.MainGUI;
 
-
 import java.io.FileOutputStream;
-
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+
 /**
- * Created by Thomas on 05.05.2017.
+ *
  */
 public class ControleurXpathXML {
 
@@ -61,10 +57,10 @@ public class ControleurXpathXML {
                     Document docToRead = builder.build("projections.xml");
                     Document doc = new Document();
 
-
-                    //ajout de la ligne pour la dtd
+                    // Ajout de la ligne pour la dtd
                     doc.addContent(new DocType("projections", "plex_admin.dtd"));
-                    //ajout de la feuille de style
+
+                    // Ajout de la feuille de style
                     ProcessingInstruction pI = new ProcessingInstruction("xml-stylesheet");
                     HashMap<String,String> hm = new HashMap<String, String>();
                     hm.put("type","text/xsl");
@@ -72,28 +68,29 @@ public class ControleurXpathXML {
                     pI.setData(hm);
                     doc.addContent(pI);
 
-                    doc.setRootElement(new Element("plex")); //Elément racine
+                    doc.setRootElement(new Element("plex"));    //Elément racine
                     XPathFactory xPathFactory = XPathFactory.instance();
                     XPathExpression xPathExpression = xPathFactory.compile("/projections//projection", Filters.element());
                     List<Element> resultat = (List<Element>) (xPathExpression.evaluate(docToRead));
 
-                    HashMap<String, String> lienFilmTitre = new HashMap<>(); //Lien entre les id des films et leur titres
-                    HashMap<String, String> lienActeurRole = new HashMap<>();
+                    HashMap<String, String> lienFilmTitre = new HashMap<>();    // Lien entre les id des films et leur titres
+                    HashMap<String, String> lienActeurRole = new HashMap<>();   // Lien entre les acteurs et leur rôle
 
-                    //Elément contenant
+                    // Elément contenant l'ensemble des projections
                     Element projections = new Element("projections");
 
-                    int i = 0;
-
+                    int i = 0;  // Incrément pour les identifants
                     for (Element elem: resultat) {
-                        elem.detach(); //détache la racine de l'élément (par sécurité)
+                        elem.detach();  //détache la racine de l'élément (par sécurité)
                         String film_id;
-                        Attribute titre = elem.getChild("film").getAttribute("titre").clone();
-                        String titreToString = elem.getChild("film").getAttributeValue("titre");
 
+                        // Plus besoin
+                        //Attribute titre = elem.getChild("film").getAttribute("titre").clone();
+
+                        String titreToString = elem.getChild("film").getAttributeValue("titre");
                         Element projection = new Element(elem.getName());
 
-                        //Vérifier que le titre n'as pas déjà d'identifiant
+                        // Vérifier que le titre n'as pas déjà d'identifiant
                         if(!lienFilmTitre.containsValue(titreToString)){
                             //si le titre n'existe pas on l'ajoute
                             film_id = "F" + i;
@@ -111,17 +108,16 @@ public class ControleurXpathXML {
                         projections.addContent(projection);
                     }
 
-                    /*---------- Construit la liste des films et des acteurs----------------------*/
+                    // Construit la liste des films et des acteurs
                     Element films = new Element("films");
                     Element acteurs = new Element("acteurs");
-                    Element langages = new Element("liste_langages");
-                    Element genres = new Element("liste_genres");
-                    Element motCles = new Element("liste_mots_cles");
+                    Element langages = new Element("langages");
+                    Element genres = new Element("genres");
+                    Element motCles = new Element("motCles");
 
                     int acteur_id = 0;
                     for (Element elem : resultat){
                         elem.detach();
-
                         Element film = elem.getChild("film").clone();
                         Element acteur = elem.getChild("film").getChild("acteurs").clone();
                         String titre = film.getAttributeValue("titre");
@@ -130,26 +126,26 @@ public class ControleurXpathXML {
                         ArrayList<ArrayList<Element>> acteurs_roles = populateActeurs(acteur, lienActeurRole, acteur_id);
                         acteurs.addContent(acteurs_roles.get(0));
 
-                        //création des films avec id
+                        // Création des films avec id
                         films.addContent(populateFilms(film, lienFilmTitre.get(titre), acteurs_roles.get(1)));
-                        //création de la liste des langues avec id
-                        langages.addContent(populateLangages(elem.getChild("film").getChild("langages").getChildren()));
 
+                        // Création de la liste des langues avec id
+                        langages.addContent(populateLangages(elem.getChild("film").getChild("langages").getChildren()));
                         acteur_id = acteur.getContentSize();
                     }
 
-                    projections.addContent(films); //ajoute la liste des films
-                    projections.addContent(acteurs); //ajoute la liste des acteurs
+                    projections.addContent(films);      // Ajoute la liste des films
+                    projections.addContent(acteurs);    // Ajoute la liste des acteurs
 
                     //TODO ajouter la liste des MotClef
+                    //TODO ajouter la liste des acteurs
+                    //TODO ajouter la liste des roles
 
-                    doc.getRootElement().addContent(projections); //ajoute les projections à plex
-
+                    doc.getRootElement().addContent(projections);   // Ajoute les projections à PLEX
                     writeToFile(xpathFileName,doc);
 
+                    // Retour vers l'interface
                     mainGUI.setAcknoledgeMessage("XML from Xpath cree en "+ displaySeconds(currentTime, System.currentTimeMillis()) );
-
-
                 }catch (Exception e){
                     mainGUI.setErrorMessage("Construction Xpath impossible", e.toString());
                 }
@@ -160,8 +156,8 @@ public class ControleurXpathXML {
     private List<Element> populateLangages(List<Element> listLangages) {
         ArrayList<Element> langages = new ArrayList<>();
 
-        for (Element sprache: listLangages){
-            Element langue = new Element("langue").setAttribute(no)
+        for (Element langue: listLangages){
+
         }
 
         return langages;
@@ -242,7 +238,6 @@ public class ControleurXpathXML {
 
             roles.add(element.getChild("role").setAttribute("acteur_id", acteur_id).clone());
         }
-
         acteur_roles.add(acteurs);
         acteur_roles.add(roles);
         return acteur_roles;
@@ -260,6 +255,20 @@ public class ControleurXpathXML {
         }
 
         return critiques;
+    }
+
+    private Element populateRoles(Element movie) {
+        Element roles = new Element("roles");
+
+        List<Element> listElement = movie.getChildren("acteur");
+
+        for(Element acteur: listElement){
+            acteur.detach();
+            Element role = acteur.getChild("role").clone();
+            //role.setAttribute("acteur_id", acteur.getAttributeValue("acteur_id"));
+        }
+
+        return roles;
     }
 
     private Element populateSalle(Element elem) {
