@@ -73,8 +73,9 @@ public class ControleurXpathXML {
                     XPathExpression xPathExpression = xPathFactory.compile("/projections//projection", Filters.element());
                     List<Element> resultat = (List<Element>) (xPathExpression.evaluate(docToRead));
 
-                    HashMap<String, String> lienFilmTitre = new HashMap<>();    // Lien entre les id des films et leur titres
-                    HashMap<String, String> lienActeurRole = new HashMap<>();   // Lien entre les acteurs et leur rôle
+                    HashMap<String, String> lienFilmTitre = new HashMap<>(); //Lien entre les id des films et leur titres
+                    HashMap<String, String> lienActeurRole = new HashMap<>(); //Lien entre les acteur et les rôles
+                    HashMap<String, String> lienLangageFilm = new HashMap<>(); //Lien entre langage et film
 
                     // Elément contenant l'ensemble des projections
                     Element projections = new Element("projections");
@@ -116,15 +117,19 @@ public class ControleurXpathXML {
                     Element motCles = new Element("motCles");
 
                     int acteur_id = 0;
+                    int langue_id = 0;
                     for (Element elem : resultat){
                         elem.detach();
                         Element film = elem.getChild("film").clone();
                         Element acteur = elem.getChild("film").getChild("acteurs").clone();
+                        Element langues = elem.getChild("film").getChild("langages").clone();
                         String titre = film.getAttributeValue("titre");
                         String nom = acteur.getAttributeValue("nom");
 
                         ArrayList<ArrayList<Element>> acteurs_roles = populateActeurs(acteur, lienActeurRole, acteur_id);
                         acteurs.addContent(acteurs_roles.get(0));
+                        //création de la liste des langues avec id
+                        langages.addContent(populateLangages(langues, lienLangageFilm, langue_id));
 
                         // Création des films avec id
                         films.addContent(populateFilms(film, lienFilmTitre.get(titre), acteurs_roles.get(1)));
@@ -132,10 +137,13 @@ public class ControleurXpathXML {
                         // Création de la liste des langues avec id
                         langages.addContent(populateLangages(elem.getChild("film").getChild("langages").getChildren()));
                         acteur_id = acteur.getContentSize();
+                        langue_id = langues.getContentSize();
+
                     }
 
-                    projections.addContent(films);      // Ajoute la liste des films
-                    projections.addContent(acteurs);    // Ajoute la liste des acteurs
+                    projections.addContent(films); //ajoute la liste des films
+                    projections.addContent(acteurs); //ajoute la liste des acteurs
+                    projections.addContent(langages);
 
                     //TODO ajouter la liste des MotClef
                     //TODO ajouter la liste des acteurs
@@ -163,7 +171,6 @@ public class ControleurXpathXML {
         return langages;
     }
 
-
     private Element populateFilms(Element movie, String film_id, ArrayList<Element> roles) {
         Element film = new Element("film").setAttribute("no", film_id);
         film.addContent(new Element("titre").setText(movie.getAttributeValue("titre")));
@@ -182,8 +189,34 @@ public class ControleurXpathXML {
         //film.addContent(movie.getChild("motCles").clone());
 
         film.addContent(roles);
+        //film.addContent(langages);
 
         return film;
+    }
+
+    private List<Element> populateLangages(Element listLangages, HashMap<String, String> lienLangageFilm, int id) {
+        ArrayList<Element> langages = new ArrayList<>();
+        String langue_id;
+        String langue;
+
+
+        for (Element sprache: listLangages.getChildren()){
+
+            langue = sprache.getAttributeValue("label");
+
+
+            //Vérifier que le titre n'as pas déjà d'identifiant
+            if(!lienLangageFilm.containsValue(langue)){
+                //si le titre n'existe pas on l'ajoute
+                langue_id = "L" + id;
+                lienLangageFilm.put(langue, langue_id);
+                System.out.println(langue);
+                langages.add(new Element("langue").setAttribute("no",langue_id).setText(langue));
+                id++; //on augmente i qui sont on a ajouté un film
+            }
+        }
+
+        return langages;
     }
 
     private ArrayList<ArrayList<Element>> populateActeurs(Element act, HashMap<String, String> lienIdActeur, int id){
