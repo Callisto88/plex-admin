@@ -114,14 +114,13 @@ public class ControleurXpathXML {
                     /*---------- Construit la liste des films et des acteurs----------------------*/
                     Element films = new Element("films");
                     Element acteurs = new Element("acteurs");
-                    Element langages = new Element("langages");
-                    Element genres = new Element("genres");
-                    Element motCles = new Element("motCles");
+                    Element langages = new Element("liste_langages");
+                    Element genres = new Element("liste_genres");
+                    Element motCles = new Element("liste_mots_cles");
 
                     int acteur_id = 0;
                     for (Element elem : resultat){
                         elem.detach();
-
 
                         Element film = elem.getChild("film").clone();
                         Element acteur = elem.getChild("film").getChild("acteurs").clone();
@@ -143,8 +142,6 @@ public class ControleurXpathXML {
                     projections.addContent(acteurs); //ajoute la liste des acteurs
 
                     //TODO ajouter la liste des MotClef
-                    //TODO ajouter la liste des acteurs
-                    //TODO ajouter la liste des roles
 
                     doc.getRootElement().addContent(projections); //ajoute les projections à plex
 
@@ -163,8 +160,8 @@ public class ControleurXpathXML {
     private List<Element> populateLangages(List<Element> listLangages) {
         ArrayList<Element> langages = new ArrayList<>();
 
-        for (Element langue: listLangages){
-            
+        for (Element sprache: listLangages){
+            Element langue = new Element("langue").setAttribute(no)
         }
 
         return langages;
@@ -245,6 +242,7 @@ public class ControleurXpathXML {
 
             roles.add(element.getChild("role").setAttribute("acteur_id", acteur_id).clone());
         }
+
         acteur_roles.add(acteurs);
         acteur_roles.add(roles);
         return acteur_roles;
@@ -262,20 +260,6 @@ public class ControleurXpathXML {
         }
 
         return critiques;
-    }
-
-    private Element populateRoles(Element movie) {
-        Element roles = new Element("roles");
-
-        List<Element> listElement = movie.getChildren("acteur");
-
-        for(Element acteur: listElement){
-            acteur.detach();
-            Element role = acteur.getChild("role").clone();
-            //role.setAttribute("acteur_id", acteur.getAttributeValue("acteur_id"));
-        }
-
-        return roles;
     }
 
     private Element populateSalle(Element elem) {
