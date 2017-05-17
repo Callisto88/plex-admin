@@ -90,6 +90,13 @@ public class Acteur implements Serializable {
 	@Column(name="biographie", nullable = true, columnDefinition = "TEXT")
 	private String biographie;
 	public String getBiographie(){return biographie;}
+	public String getBiographieToString(){
+		if (biographie != null) {
+			return biographie;
+		}
+
+		return "";
+	}
 	public void setBiographie(String biographie){
 		this.biographie=biographie;	
 	}

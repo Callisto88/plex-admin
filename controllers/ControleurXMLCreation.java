@@ -270,6 +270,7 @@ public class ControleurXMLCreation {
 		elemActeur.setAttribute("nomNaissance", acteur.getNomNaissance());
 		elemActeur.setAttribute("dateNaissance", acteur.getDateNaissanceToString());
 		elemActeur.setAttribute("dateDeces", acteur.getDateDecesToString());
+		elemActeur.setAttribute("biographie", acteur.getBiographieToString());
 
 		elemActeur.addContent(populateRole(roleActeur));
 
@@ -279,8 +280,8 @@ public class ControleurXMLCreation {
 	public Element populateRole(RoleActeur role){
 		Element elementRole = new Element("role");
 
-		elementRole.setAttribute("personnage", role.getPersonnage());
 		elementRole.setAttribute("place",role.getPlaceToString());
+		elementRole.setAttribute("personnage", role.getPersonnage());
 
 		return elementRole;
 	}
