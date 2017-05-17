@@ -53,24 +53,41 @@ public class ControleurXpathXML {
                     pI.setData(hm);
                     doc.addContent(pI);
 
-                    doc.setRootElement(new Element("plex"));
+                    doc.setRootElement(new Element("plex")); //Elément racine
                     XPathFactory xPathFactory = XPathFactory.instance();
                     XPathExpression xPathExpression = xPathFactory.compile("/projections//projection", Filters.element());
                     List<Element> resultat = (List<Element>) (xPathExpression.evaluate(docToRead));
 
-                    //XPathExpression xPathExpression_roles = xPathFactory.compile("/projections/projection/film//role");
-                    //List<Element> resultatRole = (List<Element>) (xPathExpression.evaluate(docToRead));
-                    String formatDate = "28-04-2017 - 00:33";
+                    HashMap<String, Attribute> lienFilmTitre = new HashMap<>();
+                    HashMap<String, String> lienActeurRole = new HashMap<>();
+
+
+                    //Elément contenant
                     Element projections = new Element("projections");
-                    //résultat des projections
+
                     int i = 0;
+
                     for (Element elem: resultat) {
 
+
+                        Attribute titre = elem.getChild("film").getAttribute("titre").clone();
                         elem.detach();
 
                         Element projection = new Element(elem.getName());
-                        projection.setAttribute("film_id", "F" + i);
+
+                        //Vérifier que le titre n'as pas déjà d'identifiant
+                        if(!lienFilmTitre.containsValue(titre)){
+                            //si le titre n'existe pas on l'ajoute
+                            String film_id = "F" + i;
+                            projection.setAttribute("film_id", film_id);
+                            lienFilmTitre.put(film_id,titre);
+                        }else{
+                            //sinon on récupère l'id qui lui est déjà attribué
+                            String film_id = lienFilmTitre.
+                        }
+
                         projection.setAttribute(elem.getChild("film").getAttribute("titre").clone());
+
                         projection.addContent(populateSalle(elem));
                         projection.addContent(populateDateHeure(elem));
 
@@ -110,13 +127,13 @@ public class ControleurXpathXML {
         film.addContent(new Element("titre").setText(movie.getAttributeValue("titre")));
         film.addContent(new Element("duree").setText(movie.getAttributeValue("duree")));
         film.addContent(movie.getChild("synopsis").clone());
-        film.addContent(new Element("photo").setText(movie.getAttributeValue("photo")));
-
+        film.addContent(new Element("photo").setAttribute("url", "http://docr.iict.ch/imdb/" + movie.getAttributeValue("film_id")+".jpg"));
+        film.setAttribute("no", )
         //les critiques sont déjà dans le bon format
-        film.addContent(movie.getChild("critiques").clone());
-        film.addContent(movie.getChild("langages").clone());
-        film.addContent(movie.getChild("genres").clone());
-        film.addContent(movie.getChild("motCles").clone());
+        //film.addContent(movie.getChild("critiques").clone());
+        //film.addContent(movie.getChild("langages").clone());
+        //film.addContent(movie.getChild("genres").clone());
+        //film.addContent(movie.getChild("motCles").clone());
 
         //TODO trouver un moyen d'ajouter le rôles peut-être avec Xpath
         //film.addContent(populateRoles(movie));
