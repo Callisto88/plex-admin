@@ -39,6 +39,7 @@ public class ControleurXpathXML {
     private MainGUI mainGUI;
 
     private final static String xpathFileName = "XpathProjection.xml";
+    private static final DecimalFormat doubleFormat = new DecimalFormat("#.#");
 
     ControleurXpathXML(Document doc, MainGUI mainGUI){
         xml = doc;
@@ -58,7 +59,7 @@ public class ControleurXpathXML {
                     Document doc = new Document();
 
                     // Ajout de la ligne pour la dtd
-                    doc.addContent(new DocType("projections", "plex_admin.dtd"));
+                    doc.addContent(new DocType("plex", "projections.dtd"));
 
                     // Ajout de la feuille de style
                     ProcessingInstruction pI = new ProcessingInstruction("xml-stylesheet");
@@ -70,12 +71,13 @@ public class ControleurXpathXML {
 
                     doc.setRootElement(new Element("plex"));    //Elément racine
                     XPathFactory xPathFactory = XPathFactory.instance();
-                    XPathExpression xPathExpression = xPathFactory.compile("/projections//projection", Filters.element());
+                    XPathExpression xPathExpression = xPathFactory.compile("//projections/projection", Filters.element());
                     List<Element> resultat = (List<Element>) (xPathExpression.evaluate(docToRead));
 
                     HashMap<String, String> lienFilmTitre = new HashMap<>(); //Lien entre les id des films et leur titres
                     HashMap<String, String> lienActeurRole = new HashMap<>(); //Lien entre les acteur et les rôles
                     HashMap<String, String> lienLangageFilm = new HashMap<>(); //Lien entre langage et film
+                    HashMap<String, String> lienMotsCleFilm = new HashMap<>(); //Lien entre langage et film
 
                     // Elément contenant l'ensemble des projections
                     Element projections = new Element("projections");
@@ -118,6 +120,7 @@ public class ControleurXpathXML {
 
                     int acteur_id = 0;
                     int langue_id = 0;
+                    int motCle_id = 0;
                     for (Element elem : resultat){
                         elem.detach();
                         Element film = elem.getChild("film").clone();
@@ -128,26 +131,35 @@ public class ControleurXpathXML {
 
                         ArrayList<ArrayList<Element>> acteurs_roles = populateActeurs(acteur, lienActeurRole, acteur_id);
                         acteurs.addContent(acteurs_roles.get(0));
+
+                        // Ajout des rôles
+                        // <roles>
+                        //  <role></role>
+                        //  ..
+                        //  <role></role>s
+                        // </roles
+                        // roles.addContent(acteurs_roles.get(1));
+
                         //création de la liste des langues avec id
                         langages.addContent(populateLangages(langues, lienLangageFilm, langue_id));
 
+                        motCles.addContent(populateMotsCle(film, lienMotsCleFilm, motCle_id));
+
                         // Création des films avec id
                         films.addContent(populateFilms(film, lienFilmTitre.get(titre), acteurs_roles.get(1)));
+                        // films.addContent(populateFilms(film, lienFilmTitre.get(titre), roles));
 
                         // Création de la liste des langues avec id
-                        langages.addContent(populateLangages(elem.getChild("film").getChild("langages").getChildren()));
+                        // langages.addContent(populateLangages(elem.getChild("film").getChild("langages").getChildren()));
                         acteur_id = acteur.getContentSize();
                         langue_id = langues.getContentSize();
-
+                        motCle_id = motCles.getContentSize();
                     }
 
                     projections.addContent(films); //ajoute la liste des films
                     projections.addContent(acteurs); //ajoute la liste des acteurs
                     projections.addContent(langages);
-
-                    //TODO ajouter la liste des MotClef
-                    //TODO ajouter la liste des acteurs
-                    //TODO ajouter la liste des roles
+                    projections.addContent(motCles);
 
                     doc.getRootElement().addContent(projections);   // Ajoute les projections à PLEX
                     writeToFile(xpathFileName,doc);
@@ -161,11 +173,14 @@ public class ControleurXpathXML {
         }).start();
     }
 
-    private List<Element> populateLangages(List<Element> listLangages) {
-        ArrayList<Element> langages = new ArrayList<>();
+    private Element populateLangages(List<Element> listLangages) {
 
-        for (Element langue: listLangages){
+        Element langages = new Element("liste_langages");
 
+        for (Element langue : listLangages){
+            langages.addContent(new Element("langage")
+                    .setText(langue.getAttributeValue("label"))
+                    .setAttribute("no", langages.getAttributeValue("id")));
         }
 
         return langages;
@@ -175,35 +190,81 @@ public class ControleurXpathXML {
         Element film = new Element("film").setAttribute("no", film_id);
         film.addContent(new Element("titre").setText(movie.getAttributeValue("titre")));
         film.addContent(new Element("duree").setText(movie.getAttributeValue("duree")).setAttribute("format", "minutes"));
-        film.addContent(movie.getChild("synopsis").clone());
+
+        Element synopsys = new Element("synopsys");
+        synopsys.addContent(movie.getChild("synopsis").getText());
+        film.addContent(synopsys);
+
         film.addContent(new Element("photo").setAttribute("url", "http://docr.iict.ch/imdb/" + movie.getAttributeValue("film_id")+".jpg"));
 
-        //les critiques doivent être dans le bon format
+        // Les critiques doivent être dans le bon format
         List<Element> listCritique = movie.getChild("critiques").getChildren();
         film.addContent(populateCritiques(listCritique));
-        List<Element> listLangages = movie.getChild("langages").getChildren();
-        //film.addContent(movie.getChild("langages").clone());
-        List<Element> listGenres = movie.getChild("genres").getChildren();
-        //film.addContent(movie.getChild("genres").clone());
-        List<Element> listMotCles = movie.getChild("motCles").getChildren();
-        //film.addContent(movie.getChild("motCles").clone());
 
-        film.addContent(roles);
+        //List<Element> listLangages = movie.getChild("langages").getChildren();
+        //film.addContent(populateLangages(listLangages));
+
+        List<Element> listGenres = movie.getChild("genres").getChildren();
+        film.addContent(movie.getChild("genres").clone());
+
+        List<Element> listMotCles = movie.getChild("motCles").getChildren();
+        film.addContent(movie.getChild("motCles").clone());
+
+        Element elementRoles = new Element("roles");
+        elementRoles.addContent(roles);
+        film.addContent(elementRoles);
+
         //film.addContent(langages);
 
         return film;
     }
 
-    private List<Element> populateLangages(Element listLangages, HashMap<String, String> lienLangageFilm, int id) {
+    private Element populateMotsCle(Element film, HashMap<String, String> hm, int motClesId) {
+
+        // Mots-Cles
+        Element eListeMotsCles = new Element("liste_mots_cles");
+        Element eMotCles = new Element("motCles");
+        String motClesList = "";
+        String motCleRef;
+
+        for (Element motCle : film.getChild("motCles").getChildren()) {
+            //Le mot-cle sert de cle dans le hashmap motCleMap
+            String motCleValue = motCle.getAttributeValue("motCle");
+
+            //Si le mot-cle n'est pas encore referencee, le reference
+            if(!hm.containsKey(motCleValue)) {
+                motCleRef = "M" + motClesId; //Reference unique
+                hm.put(motCleValue, motCleRef); //Ajout du mot-cle au hashmap pour eviter les doublons
+                motClesId++;
+
+                Element eMotCle = new Element("motCle");
+                eMotCle.setAttribute("no", motCleRef);
+                eMotCle.setText(motCleValue);
+
+                eListeMotsCles.addContent(eMotCle);
+            }
+            else {
+                //Sinon recupere la reference de celuic-i
+                motCleRef = hm.get(motCleValue);
+            }
+
+            motClesList += motCleRef + " ";
+        }
+        eMotCles.setAttribute(new Attribute("liste", motClesList, Attribute.IDREFS_TYPE));
+
+        return eMotCles;
+    }
+
+    private Element populateLangages(Element listLangages, HashMap<String, String> lienLangageFilm, int id) {
+
+        Element langagesWrapper = new Element("liste_langages");
         ArrayList<Element> langages = new ArrayList<>();
         String langue_id;
         String langue;
 
-
         for (Element sprache: listLangages.getChildren()){
 
             langue = sprache.getAttributeValue("label");
-
 
             //Vérifier que le titre n'as pas déjà d'identifiant
             if(!lienLangageFilm.containsValue(langue)){
@@ -215,8 +276,9 @@ public class ControleurXpathXML {
                 id++; //on augmente i qui sont on a ajouté un film
             }
         }
+        langagesWrapper.addContent(langages);
 
-        return langages;
+        return langagesWrapper;
     }
 
     private ArrayList<ArrayList<Element>> populateActeurs(Element act, HashMap<String, String> lienIdActeur, int id){
@@ -226,6 +288,7 @@ public class ControleurXpathXML {
 
         String formatDate = act.getAttributeValue("formatDate");
         for (Element element: act.getChildren()){
+
             String nom = element.getAttributeValue("nom");
             String acteur_id;
 
@@ -271,16 +334,25 @@ public class ControleurXpathXML {
 
             roles.add(element.getChild("role").setAttribute("acteur_id", acteur_id).clone());
         }
+
         acteur_roles.add(acteurs);
         acteur_roles.add(roles);
+
         return acteur_roles;
     }
 
+    /**
+     * Récupère la balise "critiques" et ses enfants puis génére l'élément (Element) correspondant pour le fichier
+     * XML de destination
+     *
+     * @param listeCritiques liste de critiques (balises "critique", enfants de "critiques")
+     * @return un Element nommé "critiques" contenant des enfants "critique" (structure similaire à la source)
+     */
+    private Element populateCritiques(List<Element> listeCritiques) {
 
-    private Element populateCritiques(List<Element> listeCritiques){
         Element critiques = new Element("critiques");
 
-        //List<Element> listCritique = listeCritiques.getChildren();
+        // List<Element> listCritique = listeCritiques.getChildren();
         for (Element critique: listeCritiques){
             critiques.addContent(new Element("critique")
                     .setText(critique.getAttributeValue("texte"))
@@ -290,36 +362,45 @@ public class ControleurXpathXML {
         return critiques;
     }
 
-    private Element populateRoles(Element movie) {
-        Element roles = new Element("roles");
+    /**
+     * Récupère la balise salle avec sa taille et génére l'élément correspondant pour le fichier XML de destination
+     *
+     * @param elemProjection élément "projection" dont on extrait les informations relatives à la salle (dont sa taille)
+     * @return un Element nommé "salle" avec un attribut lié "taille" ( taille pour capacité de la salle )
+     */
+    private Element populateSalle(Element elemProjection) {
 
-        List<Element> listElement = movie.getChildren("acteur");
-
-        for(Element acteur: listElement){
-            acteur.detach();
-            Element role = acteur.getChild("role").clone();
-            //role.setAttribute("acteur_id", acteur.getAttributeValue("acteur_id"));
-        }
-
-        return roles;
-    }
-
-    private Element populateSalle(Element elem) {
         Element salle = new Element("salle");
-        salle.addContent(elem.getAttributeValue("salle"));
-        //.clone() detache le parent
-        salle.setAttribute(elem.getAttribute("taille").clone());
+        salle.addContent(elemProjection.getAttributeValue("salle"));
+        salle.setAttribute(elemProjection.getAttribute("taille").clone());
+
         return salle;
     }
 
-    private Element populateDateHeure(Element elem) {
+    /**
+     * Récupère l'élément dateHeure du fichier XML source et crée un élément (Element) "date_heure"
+     * dans le fichier XML de destination
+     *
+     * @param elemProjection élément "projection" dont on extrait la dateHeure
+     * @return un Element nommé "date_heure" contenant la date et l'heure de la séance au format JJ-MM-AAAA - HH:MM
+     */
+    private Element populateDateHeure(Element elemProjection) {
+
         Element date_heure = new Element("date_heure");
-        date_heure.addContent(elem.getAttributeValue("dateHeure"));
+        date_heure.addContent(elemProjection.getAttributeValue("dateHeure"));
         date_heure.setAttribute("format","dd-MM-yyyy - HH:mm /24h");
+
         return date_heure;
     }
 
-    private static void writeToFile(String filename, Document doc){
+    /**
+     * Méthode permettant d'écrire dans un document
+     *
+     * @param filename nom du fichier de destination
+     * @param doc le contenu qui va être inséré dans le fichier
+     */
+    private static void writeToFile(String filename, Document doc) {
+
         try {
             XMLOutputter fichierXml = new XMLOutputter(Format.getPrettyFormat());
             fichierXml.output(doc,new FileOutputStream(filename));
@@ -328,11 +409,18 @@ public class ControleurXpathXML {
         }
     }
 
-
-    private static final DecimalFormat doubleFormat = new DecimalFormat("#.#");
+    /**
+     * Méthode qui chronomètres la durée dans un intervall donné
+     *
+     * @param start début du chronométrage
+     * @param end fin du chronométrage
+     * @return le nombre de secondes écoulées entre start et end
+     */
     private static final String displaySeconds(long start, long end) {
+
         long diff = Math.abs(end - start);
         double seconds = ((double) diff) / 1000.0;
+
         return doubleFormat.format(seconds) + " s";
     }
 }
