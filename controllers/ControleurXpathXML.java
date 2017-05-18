@@ -7,7 +7,9 @@
 
 package controllers;
 
+import com.ibm.icu.text.ArabicShaping;
 import models.GlobalData;
+import models.Langage;
 import org.jdom2.*;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.DocType;
@@ -81,6 +83,7 @@ public class ControleurXpathXML {
 
                     // Elément contenant l'ensemble des projections
                     Element projections = new Element("projections");
+                    Element liste_langues = new Element("liste_langages");
 
                     int i = 0;  // Incrément pour les identifants
                     for (Element elem: resultat) {
@@ -116,11 +119,13 @@ public class ControleurXpathXML {
                     Element acteurs = new Element("acteurs");
                     Element langages = new Element("langages");
                     Element genres = new Element("genres");
-                    Element motCles = new Element("motCles");
+                    Element liste_mots_cles = new Element("liste_mots_cles");
 
                     int acteur_id = 0;
                     int langue_id = 0;
                     int motCle_id = 0;
+                    Element liste_langages = new Element("liste_langages");
+
                     for (Element elem : resultat){
                         elem.detach();
                         Element film = elem.getChild("film").clone();
@@ -132,18 +137,8 @@ public class ControleurXpathXML {
                         ArrayList<ArrayList<Element>> acteurs_roles = populateActeurs(acteur, lienActeurRole, acteur_id);
                         acteurs.addContent(acteurs_roles.get(0));
 
-                        // Ajout des rôles
-                        // <roles>
-                        //  <role></role>
-                        //  ..
-                        //  <role></role>s
-                        // </roles
-                        // roles.addContent(acteurs_roles.get(1));
-
-                        //création de la liste des langues avec id
-                        langages.addContent(populateLangages(langues, lienLangageFilm, langue_id));
-
-                        motCles.addContent(populateMotsCle(film, lienMotsCleFilm, motCle_id));
+                        liste_langages.addContent(populateLangages(langues, lienLangageFilm, langue_id));
+                        populateMotsCle(film, lienMotsCleFilm, motCle_id);
 
                         // Création des films avec id
                         films.addContent(populateFilms(film, lienFilmTitre.get(titre), acteurs_roles.get(1)));
@@ -153,15 +148,17 @@ public class ControleurXpathXML {
                         // langages.addContent(populateLangages(elem.getChild("film").getChild("langages").getChildren()));
                         acteur_id = acteur.getContentSize();
                         langue_id = langues.getContentSize();
-                        motCle_id = motCles.getContentSize();
+                        motCle_id = liste_mots_cles.getContentSize();
                     }
 
                     projections.addContent(films); //ajoute la liste des films
                     projections.addContent(acteurs); //ajoute la liste des acteurs
-                    projections.addContent(langages);
-                    projections.addContent(motCles);
+                    // projections.addContent(liste_mots_cles);
 
+                    doc.getRootElement().addContent(liste_mots_cles);
+                    doc.getRootElement().addContent(liste_langages);
                     doc.getRootElement().addContent(projections);   // Ajoute les projections à PLEX
+
                     writeToFile(xpathFileName,doc);
 
                     // Retour vers l'interface
@@ -222,14 +219,13 @@ public class ControleurXpathXML {
     private Element populateMotsCle(Element film, HashMap<String, String> hm, int motClesId) {
 
         // Mots-Cles
-        Element eListeMotsCles = new Element("liste_mots_cles");
         Element eMotCles = new Element("motCles");
         String motClesList = "";
         String motCleRef;
 
         for (Element motCle : film.getChild("motCles").getChildren()) {
-            //Le mot-cle sert de cle dans le hashmap motCleMap
-            String motCleValue = motCle.getAttributeValue("motCle");
+            //Le mot-cle sert de cle dans le motCles motCleMap
+            String motCleValue = motCle.getAttributeValue("label");
 
             //Si le mot-cle n'est pas encore referencee, le reference
             if(!hm.containsKey(motCleValue)) {
@@ -240,8 +236,6 @@ public class ControleurXpathXML {
                 Element eMotCle = new Element("motCle");
                 eMotCle.setAttribute("no", motCleRef);
                 eMotCle.setText(motCleValue);
-
-                eListeMotsCles.addContent(eMotCle);
             }
             else {
                 //Sinon recupere la reference de celuic-i
@@ -257,28 +251,28 @@ public class ControleurXpathXML {
 
     private Element populateLangages(Element listLangages, HashMap<String, String> lienLangageFilm, int id) {
 
-        Element langagesWrapper = new Element("liste_langages");
+        Element liste_langages = new Element("liste_langages");
         ArrayList<Element> langages = new ArrayList<>();
         String langue_id;
         String langue;
 
-        for (Element sprache: listLangages.getChildren()){
+        for (Element sprache: listLangages.getChildren()) {
 
             langue = sprache.getAttributeValue("label");
 
             //Vérifier que le titre n'as pas déjà d'identifiant
-            if(!lienLangageFilm.containsValue(langue)){
+            if (!lienLangageFilm.containsValue(langue)) {
                 //si le titre n'existe pas on l'ajoute
                 langue_id = "L" + id;
                 lienLangageFilm.put(langue, langue_id);
                 System.out.println(langue);
-                langages.add(new Element("langue").setAttribute("no",langue_id).setText(langue));
+                langages.add(new Element("langue").setAttribute("no", langue_id).setText(langue));
                 id++; //on augmente i qui sont on a ajouté un film
             }
         }
-        langagesWrapper.addContent(langages);
+        liste_langages.addContent(langages);
 
-        return langagesWrapper;
+        return liste_langages;
     }
 
     private ArrayList<ArrayList<Element>> populateActeurs(Element act, HashMap<String, String> lienIdActeur, int id){
