@@ -21,6 +21,7 @@ public class ControleurGeneral {
 	private ControleurMedia ctrMedia; 
 	private ControleurXMLCreation ctrXMLCreation;
 	private ControleurXpathXML ctrXmltoXpath;
+	private ControleurWFC controleurWFC;
 
 	public ControleurGeneral(ORMAccess ormAccess){
 		ControleurGeneral.ormAccess = ormAccess;
@@ -33,6 +34,12 @@ public class ControleurGeneral {
 		ctrMedia = new ControleurMedia(this, mainGUI, ormAccess);
 		ctrXMLCreation = new ControleurXMLCreation(this, mainGUI, ormAccess);
 		ctrXmltoXpath = new ControleurXpathXML(ctrXMLCreation.getXmlDocument(), mainGUI);
+		try {
+			controleurWFC = new ControleurWFC(this,mainGUI);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+
 	}
 
 	public void createXStreamXML(){ctrXMLCreation.createXStreamXML();}

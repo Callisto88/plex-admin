@@ -13,6 +13,8 @@ package controllers;
  */
 
 import models.GlobalData;
+
+import views.MainGUI;
 import org.jdom2.*;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
@@ -20,7 +22,6 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
-import views.MainGUI;
 
 import java.io.FileOutputStream;
 import java.text.DecimalFormat;
