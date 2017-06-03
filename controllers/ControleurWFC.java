@@ -3,18 +3,13 @@ package controllers;
 import ch.heigvd.iict.ser.imdb.models.Data;
 import ch.heigvd.iict.ser.rmi.IClientApi;
 import ch.heigvd.iict.ser.rmi.IServerApi;
-import org.apache.xpath.SourceTree;
 import views.*;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
+
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.DecimalFormat;
-import java.util.Observable;
-import java.util.Observer;
 
 public class ControleurWFC extends UnicastRemoteObject implements IClientApi {
 
@@ -34,8 +29,10 @@ public class ControleurWFC extends UnicastRemoteObject implements IClientApi {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			System.out.println("Problème de connexion au service WFC");
 		}
 
+		//Vérification de la connexion distante et enregistrement comme observer
 		if(remoteConnexion.isStillConnected()){
 			this.remoteConnexion.addObserver(this); //demande d'observation du serveur par le client
 		}else{

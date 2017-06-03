@@ -18,7 +18,7 @@ public class ControleurGeneral {
 	private ControleurFilms ctrFilms;
 
 	//private ControleurWFC ctrWFC;
-	private ControleurMedia ctrMedia; 
+	private ControleurMedias ctrMedia;
 	private ControleurXMLCreation ctrXMLCreation;
 	private ControleurXpathXML ctrXmltoXpath;
 	private ControleurWFC controleurWFC;
@@ -31,7 +31,7 @@ public class ControleurGeneral {
 		ctrProjections.refreshProjectionsList();
 		ctrFilms.refreshFilmsList();
 
-		ctrMedia = new ControleurMedia(this, mainGUI, ormAccess);
+		ctrMedia = new ControleurMedias(this, mainGUI, ormAccess);
 		ctrXMLCreation = new ControleurXMLCreation(this, mainGUI, ormAccess);
 		ctrXmltoXpath = new ControleurXpathXML(ctrXMLCreation.getXmlDocument(), mainGUI);
 		try {

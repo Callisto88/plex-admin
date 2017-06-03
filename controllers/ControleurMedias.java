@@ -1,24 +1,32 @@
 package controllers;
 
+import ch.heigvd.iict.ser.imdb.models.Data;
+import ch.heigvd.iict.ser.rmi.IClientApi;
+import ch.heigvd.iict.ser.rmi.IServerApi;
 import com.google.gson.*;
 import models.*;
 import views.*;
 
-import javax.lang.model.type.PrimitiveType;
 import java.io.FileWriter;
+import java.io.Serializable;
 import java.io.Writer;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ControleurMedia {
+public class ControleurMedias extends Observable implements IServerApi{
 
 	private ControleurGeneral ctrGeneral;
 	private static MainGUI mainGUI;
 	private ORMAccess ormAccess;
 	private GlobalData globalData;
+	private JsonObject output;
 
 	// JSON output is for media purpose, so we limit to the 5 first items
 	private static final int LIMITE_GENRE = 5;
@@ -26,11 +34,20 @@ public class ControleurMedia {
 	private static final int LIMITE_MOTSCLE = 5;
 	private static final String JSON_FILENAME = "projections.json";
 
-	public ControleurMedia(ControleurGeneral ctrGeneral, MainGUI mainGUI, ORMAccess ormAccess){
-		this.ctrGeneral=ctrGeneral;
-		ControleurMedia.mainGUI=mainGUI;
+	public ControleurMedias(ControleurGeneral ctrGeneral, MainGUI mainGUI, ORMAccess ormAccess){
+	    this.ctrGeneral=ctrGeneral;
+		ControleurMedias.mainGUI=mainGUI;
 		this.ormAccess=ormAccess;
-	}
+
+		try {
+		    //démarrage du serveur RMI sur pour la partie MEDIA
+            Registry rmiRegistry = LocateRegistry.createRegistry(999);
+            IServerApi rmiService = (IServerApi) UnicastRemoteObject.exportObject(this,999);
+            rmiRegistry.bind("RmiService", rmiService);
+        }catch (Exception e){
+		    e.printStackTrace();
+        }
+    }
 
 	public void sendJSONToMedia(){
 		new Thread(){
@@ -52,7 +69,7 @@ public class ControleurMedia {
                     gson = builder.create();
 
                     // Build JSON
-                    JsonObject output = buildJson(liste_projections);
+                    output = buildJson(liste_projections);
 
                     // Write output to file
                     try (Writer writer = new FileWriter(JSON_FILENAME)) {
@@ -376,4 +393,42 @@ public class ControleurMedia {
 
         return jArrayCritiques;
     }
+
+    @Override
+    public void addObserver(IClientApi client) throws RemoteException {
+        WrappedObserver wo = new WrappedObserver(client);
+        addObserver(wo);
+        System.out.println("Added observer: " + client);
+    }
+
+    @Override
+    public boolean isStillConnected() throws RemoteException {
+        return true;
+    }
+
+    @Override
+    public Data getData() throws RemoteException {
+        return null;
+    }
+
+    private class WrappedObserver implements Observer, Serializable {
+
+        private static final long serialVersionUID = -2067345842536415833L;
+
+        private IClientApi ro = null;
+
+        public WrappedObserver(IClientApi ro) {
+            this.ro = ro;
+        }
+
+        public void update(Observable o, Object arg) {
+            try {
+                ro.update(o.toString(), IClientApi.Signal.UPDATE_REQUESTED, arg.toString());
+            } catch (RemoteException e) {
+                System.out.println("Remote exception removing observer: " + this);
+                o.deleteObserver(this);
+            }
+        }
+    }
+
 }
