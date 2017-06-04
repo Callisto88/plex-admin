@@ -1,6 +1,7 @@
 package controllers;
 
 import ch.heigvd.iict.ser.imdb.models.Data;
+import ch.heigvd.iict.ser.imdb.models.DataForMedia;
 import ch.heigvd.iict.ser.rmi.IClientApi;
 import ch.heigvd.iict.ser.rmi.IServerApi;
 import com.google.gson.*;
@@ -409,6 +410,18 @@ public class ControleurMedias extends Observable implements IServerApi{
     @Override
     public Data getData() throws RemoteException {
         return null;
+    }
+
+    @Override
+    public DataForMedia getJson() throws RemoteException {
+        DataForMedia dataForMedia = new DataForMedia();
+        dataForMedia.setJsonData(output);
+        return dataForMedia;
+    }
+
+    public void broadCast() {
+        setChanged();
+        notifyObservers();
     }
 
     private class WrappedObserver implements Observer, Serializable {

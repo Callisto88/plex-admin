@@ -14,13 +14,15 @@ import java.text.DecimalFormat;
 public class ControleurWFC extends UnicastRemoteObject implements IClientApi {
 
 	private ControleurGeneral ctrGeneral;
+	private ControleurMedias ctrMedias;
 	private static MainGUI mainGUI;
 	private Data data;
 	private IServerApi remoteConnexion = null;
 
-	public ControleurWFC(ControleurGeneral ctrGeneral, MainGUI mainGUI) throws RemoteException{
+	public ControleurWFC(ControleurGeneral ctrGeneral, MainGUI mainGUI, ControleurMedias ctrMedias) throws RemoteException{
 		super(); //appelle du controleur de la super classe
-		this.ctrGeneral=ctrGeneral;
+		this.ctrGeneral = ctrGeneral;
+		this.ctrMedias 	= ctrMedias;
 		ControleurWFC.mainGUI=mainGUI;
 
 		try {
@@ -59,6 +61,10 @@ public class ControleurWFC extends UnicastRemoteObject implements IClientApi {
 		this.data = remoteConnexion.getData();
 		if(ctrGeneral != null && data != null){
 			ctrGeneral.initBaseDeDonneesAvecNouvelleVersion(data);
+			if(ctrMedias != null){
+				ctrMedias.broadCast();
+			}
 		}
+
 	}
 }

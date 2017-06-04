@@ -35,7 +35,7 @@ public class ControleurGeneral {
 		ctrXMLCreation = new ControleurXMLCreation(this, mainGUI, ormAccess);
 		ctrXmltoXpath = new ControleurXpathXML(ctrXMLCreation.getXmlDocument(), mainGUI);
 		try {
-			controleurWFC = new ControleurWFC(this,mainGUI);
+			controleurWFC = new ControleurWFC(this,mainGUI, ctrMedia);
 		}catch (Exception e){
 			e.printStackTrace();
 		}
