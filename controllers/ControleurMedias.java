@@ -28,6 +28,7 @@ public class ControleurMedias extends Observable implements IServerApi{
 	private ORMAccess ormAccess;
 	private GlobalData globalData;
 	private JsonObject output;
+    DataForMedia dataForMedia;
 
 	// JSON output is for media purpose, so we limit to the 5 first items
 	private static final int LIMITE_GENRE = 5;
@@ -37,8 +38,9 @@ public class ControleurMedias extends Observable implements IServerApi{
 
 	public ControleurMedias(ControleurGeneral ctrGeneral, MainGUI mainGUI, ORMAccess ormAccess){
 	    this.ctrGeneral=ctrGeneral;
-		ControleurMedias.mainGUI=mainGUI;
 		this.ormAccess=ormAccess;
+		this.dataForMedia = new DataForMedia();
+        ControleurMedias.mainGUI=mainGUI;
 
 		try {
 		    //démarrage du serveur RMI sur pour la partie MEDIA
@@ -72,12 +74,16 @@ public class ControleurMedias extends Observable implements IServerApi{
                     // Build JSON
                     output = buildJson(liste_projections);
 
-                    // Write output to file
+                    // Write output to file and Serializable
                     try (Writer writer = new FileWriter(JSON_FILENAME)) {
+                        dataForMedia.setJsonData(output.toString());
                         writer.write(gson.toJson(output));
                     }
 
 					mainGUI.setAcknoledgeMessage("Envoi JSON: Créé avec succès en " + ControleurWFC.displaySeconds(currentTime, System.currentTimeMillis()) );
+
+                    //Des que le Json est ok, on notifiy les observers
+                    broadCast();
 				}
 				catch (Exception e){
 					mainGUI.setErrorMessage("Construction JSON impossible", e.toString());
@@ -414,14 +420,20 @@ public class ControleurMedias extends Observable implements IServerApi{
 
     @Override
     public DataForMedia getJson() throws RemoteException {
-        DataForMedia dataForMedia = new DataForMedia();
-        dataForMedia.setJsonData(output);
         return dataForMedia;
     }
 
     public void broadCast() {
-        setChanged();
-        notifyObservers();
+        try{
+            setChanged();
+            notifyObservers(getJson());
+        }catch(RemoteException e){
+            System.out.println("Erreur dans la notification des observateurs");
+        }
+    }
+
+    public void createRandomProjections() {
+
     }
 
     private class WrappedObserver implements Observer, Serializable {
